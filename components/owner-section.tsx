@@ -1,19 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Quote } from "lucide-react"
-import type { SiteSettings } from "@/lib/site-settings"
+import { useSettings } from "@/lib/hooks/use-settings"
 import Image from "next/image"
 
 export function OwnerSection() {
-  const [settings, setSettings] = useState<SiteSettings | null>(null)
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => setSettings(data.settings))
-      .catch(() => {})
-  }, [])
+  const { data: settings } = useSettings()
 
 
 
@@ -33,13 +25,15 @@ export function OwnerSection() {
           <div className="relative flex justify-center">
             <div className="relative">
               <div className="w-72 h-72 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 p-2">
-                <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                  <Image
-                    src={settings?.ownerImage ?? '' }
-                    fill
-                    alt={settings?.ownerName || "Haji Khalid Mehmood"}
-                    className="w-full h-full object-cover object-top"
-                  />
+                <div className="relative w-full h-full rounded-full overflow-hidden bg-muted">
+                  {settings?.ownerImage && (
+                    <Image
+                      src={settings.ownerImage}
+                      fill
+                      alt={settings.ownerName || "Haji Khalid Mehmood"}
+                      className="object-cover object-top"
+                    />
+                  )}
                 </div>
               </div>
               <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 rounded-full font-semibold text-sm whitespace-nowrap">

@@ -1,3 +1,5 @@
+import { readBlobData, writeBlobData, seedBlobData } from "./blob-storage";
+
 export type BalanceStatus = "proceed" | "no-balance" | "pending"
 
 export interface Client {
@@ -13,7 +15,9 @@ export interface Client {
   createdAt: string
 }
 
-const clients: Client[] = [
+const CLIENTS_BLOB_PATH = "data/clients.json";
+
+const defaultClients: Client[] = [
   {
     id: "1",
     clientId: "ALK001",
@@ -52,43 +56,59 @@ const clients: Client[] = [
   },
 ]
 
-export function getClients(): Client[] {
-  return clients
+export async function getClients(): Promise<Client[]> {
+  try {
+    // Try to get clients from blob storage
+    const clients = await readBlobData<Client[]>(CLIENTS_BLOB_PATH, []);
+    return clients;
+  } catch (error) {
+    // If no data exists, seed default data to blob storage
+    console.log("No clients found in blob storage, seeding default data...");
+    return await seedBlobData(CLIENTS_BLOB_PATH, defaultClients);
+  }
 }
 
-export function getClientById(id: string): Client | undefined {
-  return clients.find((c) => c.id === id)
+export async function getClientById(id: string): Promise<Client | undefined> {
+  const clients = await getClients();
+  return clients.find((c) => c.id === id);
 }
 
-export function authenticateClient(clientId: string, password: string): Client | null {
-  const client = clients.find((c) => c.clientId === clientId && c.password === password)
-  return client || null
+export async function authenticateClient(clientId: string, password: string): Promise<Client | null> {
+  const clients = await getClients();
+  const client = clients.find((c) => c.clientId === clientId && c.password === password);
+  return client || null;
 }
 
-export function addClient(client: Omit<Client, "id" | "createdAt">): Client {
+export async function addClient(client: Omit<Client, "id" | "createdAt">): Promise<Client> {
+  const clients = await getClients();
   const newClient: Client = {
     ...client,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
-  }
-  clients.push(newClient)
-  return newClient
+  };
+  clients.push(newClient);
+  await writeBlobData(CLIENTS_BLOB_PATH, clients);
+  return newClient;
 }
 
-export function updateClient(id: string, updates: Partial<Client>): Client | null {
-  const index = clients.findIndex((c) => c.id === id)
+export async function updateClient(id: string, updates: Partial<Client>): Promise<Client | null> {
+  const clients = await getClients();
+  const index = clients.findIndex((c) => c.id === id);
   if (index !== -1) {
-    clients[index] = { ...clients[index], ...updates }
-    return clients[index]
+    clients[index] = { ...clients[index], ...updates };
+    await writeBlobData(CLIENTS_BLOB_PATH, clients);
+    return clients[index];
   }
-  return null
+  return null;
 }
 
-export function deleteClient(id: string): boolean {
-  const index = clients.findIndex((c) => c.id === id)
+export async function deleteClient(id: string): Promise<boolean> {
+  const clients = await getClients();
+  const index = clients.findIndex((c) => c.id === id);
   if (index !== -1) {
-    clients.splice(index, 1)
-    return true
+    clients.splice(index, 1);
+    await writeBlobData(CLIENTS_BLOB_PATH, clients);
+    return true;
   }
-  return false
+  return false;
 }

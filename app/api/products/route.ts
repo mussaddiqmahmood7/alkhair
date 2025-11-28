@@ -3,8 +3,13 @@ import { getProducts, addProduct } from "@/lib/products"
 import { cookies } from "next/headers"
 
 export async function GET() {
-  const products = getProducts()
-  return NextResponse.json({ products })
+  try {
+    const products = await getProducts()
+    return NextResponse.json({ products })
+  } catch (error) {
+    console.error("Failed to get products:", error)
+    return NextResponse.json({ error: "Failed to get products" }, { status: 500 })
+  }
 }
 
 export async function POST(request: Request) {
@@ -23,9 +28,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const product = addProduct({ name, imageUrl, category })
+    const product = await addProduct({ name, imageUrl, category })
     return NextResponse.json({ product })
   } catch (error) {
+    console.error("Failed to add product:", error)
     return NextResponse.json({ error: "Failed to add product" }, { status: 500 })
   }
 }

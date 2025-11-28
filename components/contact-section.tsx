@@ -1,18 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Phone, Mail, MapPin, Clock } from "lucide-react"
-import type { SiteSettings } from "@/lib/site-settings"
+import { useSettings } from "@/lib/hooks/use-settings"
 
 export function ContactSection() {
-  const [settings, setSettings] = useState<SiteSettings | null>(null)
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => setSettings(data.settings))
-      .catch(() => {})
-  }, [])
+  const { data: settings } = useSettings()
 
   const contactInfo = [
     {

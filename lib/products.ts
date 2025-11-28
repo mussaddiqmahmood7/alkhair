@@ -1,3 +1,5 @@
+import { readBlobData, writeBlobData, seedBlobData } from "./blob-storage";
+
 export interface Product {
   id: string
   name: string
@@ -6,7 +8,9 @@ export interface Product {
   createdAt: string
 }
 
-const products: Product[] = [
+const PRODUCTS_BLOB_PATH = "data/products.json";
+
+const defaultProducts: Product[] = [
   {
     id: "1",
     name: "China Board 8+2",
@@ -93,45 +97,74 @@ const products: Product[] = [
   },
 ]
 
-export function getProducts(): Product[] {
-  return products
+export async function getProducts(): Promise<Product[]> {
+  try {
+    // Try to get products from blob storage
+    const products = await readBlobData<Product[]>(PRODUCTS_BLOB_PATH, []);
+    return products;
+  } catch (error) {
+    // If no data exists, seed default data to blob storage
+    console.log("No products found in blob storage, seeding default data...");
+    return await seedBlobData(PRODUCTS_BLOB_PATH, defaultProducts);
+  }
 }
 
-export function addProduct(product: Omit<Product, "id" | "createdAt">): Product {
+export async function addProduct(product: Omit<Product, "id" | "createdAt">): Promise<Product> {
+  const products = await getProducts();
   const newProduct: Product = {
     ...product,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
-  }
-  products.unshift(newProduct)
-  return newProduct
+  };
+  products.unshift(newProduct);
+  await writeBlobData(PRODUCTS_BLOB_PATH, products);
+  return newProduct;
 }
 
-export function deleteProduct(id: string): boolean {
-  const index = products.findIndex((p) => p.id === id)
+export async function deleteProduct(id: string): Promise<boolean> {
+  const products = await getProducts();
+  const index = products.findIndex((p) => p.id === id);
   if (index !== -1) {
-    products.splice(index, 1)
-    return true
+    products.splice(index, 1);
+    await writeBlobData(PRODUCTS_BLOB_PATH, products);
+    return true;
   }
-  return false
+  return false;
 }
 
-export function updateProductCategory(productId: string, newCategory: string): boolean {
-  const product = products.find((p) => p.id === productId)
+export async function updateProduct(id: string, updates: Partial<Omit<Product, "id" | "createdAt">>): Promise<Product | null> {
+  const products = await getProducts();
+  const index = products.findIndex((p) => p.id === id);
+  if (index !== -1) {
+    products[index] = { ...products[index], ...updates };
+    await writeBlobData(PRODUCTS_BLOB_PATH, products);
+    return products[index];
+  }
+  return null;
+}
+
+export async function updateProductCategory(productId: string, newCategory: string): Promise<boolean> {
+  const products = await getProducts();
+  const product = products.find((p) => p.id === productId);
   if (product) {
-    product.category = newCategory
-    return true
+    product.category = newCategory;
+    await writeBlobData(PRODUCTS_BLOB_PATH, products);
+    return true;
   }
-  return false
+  return false;
 }
 
-export function moveProductsToCategory(fromCategory: string, toCategory: string): number {
-  let count = 0
+export async function moveProductsToCategory(fromCategory: string, toCategory: string): Promise<number> {
+  const products = await getProducts();
+  let count = 0;
   products.forEach((p) => {
     if (p.category === fromCategory) {
-      p.category = toCategory
-      count++
+      p.category = toCategory;
+      count++;
     }
-  })
-  return count
+  });
+  if (count > 0) {
+    await writeBlobData(PRODUCTS_BLOB_PATH, products);
+  }
+  return count;
 }

@@ -1,3 +1,5 @@
+import { put, list } from "@vercel/blob";
+
 export interface StatusMessages {
   proceedTitle: string
   proceedMessage: string
@@ -28,7 +30,9 @@ export interface SiteSettings {
   statusMessages: StatusMessages
 }
 
-let siteSettings: SiteSettings = {
+const SETTINGS_BLOB_PATH = "settings/site-settings.json";
+
+const defaultSettings: SiteSettings = {
   businessName: "Al-Khair Traders",
   tagline: "Your Trusted Electrical Solutions Partner",
   phone: "03009884810",
@@ -59,11 +63,108 @@ let siteSettings: SiteSettings = {
   },
 }
 
-export function getSiteSettings(): SiteSettings {
-  return siteSettings
+export async function getSiteSettings(): Promise<SiteSettings> {
+  try {
+    const BLOB_TOKEN = process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN;
+    
+    if (!BLOB_TOKEN) {
+      throw new Error("BLOB_TOKEN not found");
+    }
+
+    // Try to get settings from blob storage by listing blobs with the prefix
+    const { blobs } = await list({
+      prefix: "settings/",
+      token: BLOB_TOKEN,
+    });
+
+    if (blobs && blobs.length > 0) {
+      // Find the exact match for our settings file
+      const settingsBlob = blobs.find(blob => blob.pathname === SETTINGS_BLOB_PATH) || blobs[0];
+      
+      // Fetch the content from the blob URL
+      const response = await fetch(settingsBlob.url);
+      if (response.ok) {
+        const text = await response.text();
+        const settings = JSON.parse(text) as SiteSettings;
+        return settings;
+      }
+    }
+
+    // If no data exists in blob storage, seed default data and return it
+    console.log("No settings found in blob storage, seeding default data...");
+    const settingsJson = JSON.stringify(defaultSettings, null, 2);
+    
+    try {
+      await put(SETTINGS_BLOB_PATH, settingsJson, {
+        access: "public",
+        token: BLOB_TOKEN,
+        contentType: "application/json",
+        allowOverwrite: false, // Only create if it doesn't exist
+      });
+      // Successfully seeded, return default settings
+      return defaultSettings;
+    } catch (putError) {
+      // If put fails because file exists (race condition), fetch it
+      if (putError instanceof Error && putError.message.includes("already exists")) {
+        console.log("Settings file was created by another request, fetching...");
+        const { blobs } = await list({
+          prefix: "settings/",
+          token: BLOB_TOKEN,
+        });
+        if (blobs && blobs.length > 0) {
+          const settingsBlob = blobs.find(blob => blob.pathname === SETTINGS_BLOB_PATH) || blobs[0];
+          const response = await fetch(settingsBlob.url);
+          if (response.ok) {
+            const text = await response.text();
+            return JSON.parse(text) as SiteSettings;
+          }
+        }
+      }
+      throw putError;
+    }
+  } catch (error) {
+    console.error("Failed to load or seed settings from blob storage:", error);
+    throw error;
+  }
 }
 
-export function updateSiteSettings(updates: Partial<SiteSettings>): SiteSettings {
-  siteSettings = { ...siteSettings, ...updates }
-  return siteSettings
+export async function updateSiteSettings(updates: Partial<SiteSettings>): Promise<SiteSettings> {
+  try {
+    const BLOB_TOKEN = process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN;
+    
+    if (!BLOB_TOKEN) {
+      throw new Error("BLOB_TOKEN not found");
+    }
+
+    // Get current settings (will seed defaults if not exists)
+    const currentSettings = await getSiteSettings();
+
+    // Merge updates with current settings
+    const updatedSettings: SiteSettings = { ...currentSettings, ...updates };
+
+    // Convert to JSON string
+    const settingsJson = JSON.stringify(updatedSettings, null, 2);
+
+    // Upload to blob storage (overwrites existing file at same path)
+    await put(SETTINGS_BLOB_PATH, settingsJson, {
+      access: "public",
+      token: BLOB_TOKEN,
+      contentType: "application/json",
+      allowOverwrite: true,
+    });
+
+    return updatedSettings;
+  } catch (error) {
+    console.error("Failed to update settings in blob storage:", error);
+    throw error;
+  }
+}
+
+/**
+ * Export settings as JSON string for backup purposes
+ * Use this to create backups of your settings
+ */
+export async function exportSiteSettings(): Promise<string> {
+  const settings = await getSiteSettings();
+  return JSON.stringify(settings, null, 2);
 }

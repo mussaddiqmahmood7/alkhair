@@ -2,13 +2,13 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { X, User, Lock, CheckCircle, XCircle, Clock, Phone, MapPin, Store, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { Client } from "@/lib/clients"
-import type { SiteSettings } from "@/lib/site-settings"
+import { useSettings } from "@/lib/hooks/use-settings"
 
 export function ClientPortal() {
   const [isOpen, setIsOpen] = useState(false)
@@ -17,14 +17,7 @@ export function ClientPortal() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [client, setClient] = useState<Client | null>(null)
-  const [settings, setSettings] = useState<SiteSettings | null>(null)
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => setSettings(data.settings))
-      .catch(() => {})
-  }, [])
+  const { data: settings } = useSettings()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

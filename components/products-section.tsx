@@ -1,35 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { Product } from "@/lib/products"
+import { useProducts } from "@/lib/hooks/use-products"
 import Image from "next/image"
 
 export function ProductsSection() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: products = [], isLoading: loading } = useProducts()
   const [selectedCategory, setSelectedCategory] = useState("All")
 
-  useEffect(() => {
-    fetchProducts()
-  }, [])
+  const categories = useMemo(() => {
+    return ["All", ...new Set(products.map((p) => p.category))]
+  }, [products])
 
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch("/api/products")
-      const data = await res.json()
-      setProducts(data.products)
-    } catch (error) {
-      console.error("Failed to fetch products:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const categories = ["All", ...new Set(products.map((p) => p.category))]
-  const filteredProducts =
-    selectedCategory === "All" ? products : products.filter((p) => p.category === selectedCategory)
+  const filteredProducts = useMemo(() => {
+    return selectedCategory === "All" 
+      ? products 
+      : products.filter((p) => p.category === selectedCategory)
+  }, [products, selectedCategory])
 
   return (
     <section id="products" className="py-16 md:py-24">
@@ -72,12 +61,13 @@ export function ProductsSection() {
                 key={product.id}
                 className="group bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all hover:shadow-lg"
               >
-                <div className="aspect-square bg-muted overflow-hidden">
+                <div className="relative aspect-square bg-muted overflow-hidden">
                   <Image
                     src={product.imageUrl??''}
                     fill
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   />
                 </div>
                 <div className="p-4">

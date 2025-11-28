@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   Loader2,
   Zap,
@@ -34,6 +35,7 @@ import { uploadImage } from "@/lib/uploadImage"
 import Image from "next/image"
 
 export function AdminDashboard() {
+  const queryClient = useQueryClient()
   const [products, setProducts] = useState<Product[]>([])
   const [settings, setSettings] = useState<SiteSettings | null>(null)
   const [clients, setClients] = useState<Client[]>([])
@@ -191,6 +193,8 @@ export function AdminDashboard() {
       setPreviewUrl("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       fetchProducts();
+      // Invalidate React Query cache
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     }
   } catch (error) {
     console.error("Failed to add product:", error);
@@ -214,6 +218,8 @@ export function AdminDashboard() {
 
       if (res.ok) {
         fetchProducts()
+        // Invalidate React Query cache
+        queryClient.invalidateQueries({ queryKey: ["products"] });
       }
     } catch (error) {
       console.error("Failed to delete product:", error)
@@ -261,6 +267,9 @@ export function AdminDashboard() {
       setHeroPreview("");
       setOwnerFile(null);
       setOwnerPreview("");
+      
+      // Invalidate React Query cache for settings
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
 
       alert("Settings saved successfully!");
     }
@@ -297,6 +306,8 @@ export function AdminDashboard() {
           status: "proceed",
         })
         fetchClients()
+        // Invalidate React Query cache (if used elsewhere)
+        queryClient.invalidateQueries({ queryKey: ["clients"] });
       }
     } catch (error) {
       console.error("Failed to add client:", error)
@@ -330,6 +341,8 @@ export function AdminDashboard() {
           status: "proceed",
         })
         fetchClients()
+        // Invalidate React Query cache (if used elsewhere)
+        queryClient.invalidateQueries({ queryKey: ["clients"] });
       }
     } catch (error) {
       console.error("Failed to update client:", error)
@@ -345,6 +358,8 @@ export function AdminDashboard() {
       const res = await fetch(`/api/clients/${id}`, { method: "DELETE" })
       if (res.ok) {
         fetchClients()
+        // Invalidate React Query cache (if used elsewhere)
+        queryClient.invalidateQueries({ queryKey: ["clients"] });
       }
     } catch (error) {
       console.error("Failed to delete client:", error)
@@ -380,6 +395,8 @@ export function AdminDashboard() {
       if (res.ok) {
         setNewCategoryName("")
         fetchCategories()
+        // Invalidate React Query cache (if used elsewhere)
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
       }
     } catch (error) {
       console.error("Failed to add category:", error)
@@ -405,6 +422,9 @@ export function AdminDashboard() {
       if (res.ok) {
         fetchCategories()
         fetchProducts()
+        // Invalidate React Query cache
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
       }
     } catch (error) {
       console.error("Failed to delete category:", error)
@@ -456,7 +476,7 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="products" className="space-y-6">
+        <Tabs defaultValue="settings" className="space-y-6">
           <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="products" className="gap-2">
               <Package className="w-4 h-4" /> Products
@@ -513,18 +533,21 @@ export function AdminDashboard() {
                     <div className="space-y-2">
                       <Label>Product Image</Label>
                       <div
-                        className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                        className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors relative"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         {previewUrl ? (
-                          <Image
-                            src={previewUrl || "/placeholder.svg"}
-                            fill
-                            alt="Preview"
-                            className="w-full h-40 object-contain rounded-lg"
-                          />
+                          <div className="relative w-full h-48 mx-auto rounded-lg overflow-hidden bg-muted">
+                            <Image
+                              src={previewUrl}
+                              fill
+                              alt="Preview"
+                              className="object-contain rounded-lg"
+                              sizes="(max-width: 768px) 100vw, 400px"
+                            />
+                          </div>
                         ) : (
-                          <div className="flex flex-col items-center gap-2">
+                          <div className="flex flex-col items-center gap-2 py-8">
                             <ImageIcon className="w-10 h-10 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground">Click to upload image</p>
                           </div>
@@ -581,12 +604,13 @@ export function AdminDashboard() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     {products.map((product) => (
                       <div key={product.id} className="bg-card rounded-xl border border-border overflow-hidden group">
-                        <div className="aspect-video bg-muted overflow-hidden">
+                        <div className="relative aspect-video bg-muted overflow-hidden">
                           <Image
                             src={product.imageUrl}
                             fill
                             alt={product.name}
-                            className="w-full h-full object-cover"
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, 33vw"
                           />
                         </div>
                         <div className="p-4">
@@ -1045,16 +1069,18 @@ export function AdminDashboard() {
                     <div className="space-y-2">
                       <Label>Owner Image</Label>
                       <div
-                        className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                        className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors relative"
                         onClick={() => ownerFileRef.current?.click()}
                       >
                         {ownerPreview || settings.ownerImage ? (
-                          <Image
-                            src={ownerPreview || settings.ownerImage}
-                            fill
-                            alt="Owner"
-                            className="w-32 h-32 object-cover rounded-full mx-auto"
-                          />
+                          <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden">
+                            <Image
+                              src={ownerPreview || settings.ownerImage}
+                              fill
+                              alt="Owner"
+                              className="object-cover rounded-full"
+                            />
+                          </div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
                             <ImageIcon className="w-10 h-10 text-muted-foreground" />
@@ -1082,12 +1108,14 @@ export function AdminDashboard() {
                         onClick={() => heroFileRef.current?.click()}
                       >
                         {heroPreview || settings.heroImage ? (
-                          <Image
-                            src={heroPreview ||  settings.heroImage}
-                            fill
-                            alt="Hero"
-                            className="w-full max-w-md h-48 object-contain mx-auto rounded-lg"
-                          />
+                          <div className="relative w-full max-w-md h-48 mx-auto rounded-lg overflow-hidden">
+                            <Image
+                              src={heroPreview || settings.heroImage}
+                              fill
+                              alt="Hero"
+                              className="object-contain rounded-lg"
+                            />
+                          </div>
                         ) : (
                           <div className="flex flex-col items-center gap-2">
                             <ImageIcon className="w-10 h-10 text-muted-foreground" />

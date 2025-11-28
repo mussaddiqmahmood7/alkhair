@@ -1,20 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { ArrowRight, Shield, Award, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { SiteSettings } from "@/lib/site-settings"
+import { useSettings } from "@/lib/hooks/use-settings"
 import Image from "next/image"
 
 export function HeroSection() {
-  const [settings, setSettings] = useState<SiteSettings | null>(null)
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => setSettings(data.settings))
-      .catch(() => {})
-  }, [])
+  const { data: settings } = useSettings()
 
 
   return (
@@ -53,13 +45,17 @@ export function HeroSection() {
           </div>
 
           <div className="relative">
-            <div className="aspect-square max-w-md mx-auto bg-gradient-to-br from-primary/30 to-primary/10 rounded-3xl p-8 flex items-center justify-center">
-              <Image
-                src={ settings?.heroImage ?? '' }
+            <div className="relative aspect-square max-w-md mx-auto bg-gradient-to-br from-primary/30 to-primary/10 rounded-3xl p-8 overflow-hidden">
+              {settings?.heroImage && (
+                <Image
+                  src={settings.heroImage}
                   fill
-                alt="Premium China Fitting Electrical Board"
-                className="w-full h-full object-contain rounded-2xl"
-              />
+                  alt="Premium China Fitting Electrical Board"
+                  className="object-cover rounded-2xl"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  priority
+                />
+              )}
             </div>
             <div className="absolute -bottom-4 -left-4 bg-card p-4 rounded-xl shadow-xl hidden md:block">
               <div className="flex items-center gap-3">
