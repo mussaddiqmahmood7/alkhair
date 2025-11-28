@@ -10,5 +10,5 @@ export async function uploadImage(file: File) {
     token:BLOB_TOKEN
   });
 
-  return blob.url; // final image URL
+  return blob.url; 
 }
