@@ -425,7 +425,6 @@ export function AdminDashboard() {
   }
 
   const allCategories = categories.map((c) => c.name)
-  const baseURL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
 
   return (
     <div className="min-h-screen bg-muted">
@@ -584,7 +583,7 @@ export function AdminDashboard() {
                       <div key={product.id} className="bg-card rounded-xl border border-border overflow-hidden group">
                         <div className="aspect-video bg-muted overflow-hidden">
                           <Image
-                            src={(baseURL ?? '') + product.imageUrl}
+                            src={product.imageUrl}
                             fill
                             alt={product.name}
                             className="w-full h-full object-cover"
@@ -1051,7 +1050,7 @@ export function AdminDashboard() {
                       >
                         {ownerPreview || settings.ownerImage ? (
                           <Image
-                            src={ownerPreview || (baseURL ?? '') + settings.ownerImage}
+                            src={ownerPreview || settings.ownerImage}
                             fill
                             alt="Owner"
                             className="w-32 h-32 object-cover rounded-full mx-auto"
@@ -1084,7 +1083,7 @@ export function AdminDashboard() {
                       >
                         {heroPreview || settings.heroImage ? (
                           <Image
-                            src={heroPreview ||  (baseURL ?? '') + settings.heroImage}
+                            src={heroPreview ||  settings.heroImage}
                             fill
                             alt="Hero"
                             className="w-full max-w-md h-48 object-contain mx-auto rounded-lg"

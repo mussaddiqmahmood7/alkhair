@@ -15,7 +15,6 @@ export function OwnerSection() {
       .catch(() => {})
   }, [])
 
-    const baseURL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
 
 
   return (
@@ -36,7 +35,7 @@ export function OwnerSection() {
               <div className="w-72 h-72 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 p-2">
                 <div className="w-full h-full rounded-full overflow-hidden bg-muted">
                   <Image
-                    src={(baseURL??'') + settings?.ownerImage }
+                    src={settings?.ownerImage ?? '' }
                     fill
                     alt={settings?.ownerName || "Haji Khalid Mehmood"}
                     className="w-full h-full object-cover object-top"

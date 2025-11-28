@@ -16,7 +16,6 @@ export function HeroSection() {
       .catch(() => {})
   }, [])
 
-  const baseURL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
 
   return (
     <section id="home" className="pt-24 pb-16 md:pt-32 md:pb-24 bg-secondary">
@@ -56,8 +55,7 @@ export function HeroSection() {
           <div className="relative">
             <div className="aspect-square max-w-md mx-auto bg-gradient-to-br from-primary/30 to-primary/10 rounded-3xl p-8 flex items-center justify-center">
               <Image
-                src={
-                  baseURL  + (settings?.heroImage ?? '' )}
+                src={ settings?.heroImage ?? '' }
                   fill
                 alt="Premium China Fitting Electrical Board"
                 className="w-full h-full object-contain rounded-2xl"

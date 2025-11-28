@@ -30,7 +30,6 @@ export function ProductsSection() {
   const categories = ["All", ...new Set(products.map((p) => p.category))]
   const filteredProducts =
     selectedCategory === "All" ? products : products.filter((p) => p.category === selectedCategory)
-  const baseURL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
 
   return (
     <section id="products" className="py-16 md:py-24">
@@ -75,7 +74,7 @@ export function ProductsSection() {
               >
                 <div className="aspect-square bg-muted overflow-hidden">
                   <Image
-                    src={(baseURL??'') + (product.imageUrl??'')}
+                    src={product.imageUrl??''}
                     fill
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
