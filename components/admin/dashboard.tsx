@@ -29,6 +29,8 @@ import type { Product } from "@/lib/products"
 import type { SiteSettings } from "@/lib/site-settings"
 import type { Client, BalanceStatus } from "@/lib/clients"
 import type { Category } from "@/lib/categories"
+import { compressImage } from "@/lib/compressImage"
+import { uploadImage } from "@/lib/uploadImage"
 
 export function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([])
@@ -159,49 +161,43 @@ export function AdminDashboard() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedFile || !name) return
+  e.preventDefault();
+  if (!selectedFile || !name) return;
 
-    setUploading(true)
+  setUploading(true);
 
-    try {
-      const formData = new FormData()
-      formData.append("file", selectedFile)
+  try {
+    // Step 1: Compress image using your utility
+     const imageUrl = await uploadImage(selectedFile)
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
+    // Step 4: Save product with uploaded image URL
+    const productRes = await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        imageUrl,
+        category: category === "custom" ? customCategory : category,
+      }),
+    });
 
-      if (!uploadRes.ok) throw new Error("Upload failed")
-
-      const { url } = await uploadRes.json()
-
-      const productRes = await fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          imageUrl: url,
-          category: category === "custom" ? customCategory : category,
-        }),
-      })
-
-      if (productRes.ok) {
-        setName("")
-        setCategory("")
-        setCustomCategory("")
-        setSelectedFile(null)
-        setPreviewUrl("")
-        if (fileInputRef.current) fileInputRef.current.value = ""
-        fetchProducts()
-      }
-    } catch (error) {
-      console.error("Failed to add product:", error)
-    } finally {
-      setUploading(false)
+    if (productRes.ok) {
+      // Reset form and fetch products
+      setName("");
+      setCategory("");
+      setCustomCategory("");
+      setSelectedFile(null);
+      setPreviewUrl("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      fetchProducts();
     }
+  } catch (error) {
+    console.error("Failed to add product:", error);
+  } finally {
+    setUploading(false);
   }
+};
+
 
   const handleDelete = async (product: Product) => {
     if (!confirm("Are you sure you want to delete this product?")) return
@@ -226,55 +222,55 @@ export function AdminDashboard() {
   }
 
   const handleSaveSettings = async () => {
-    if (!settings) return
-    setSavingSettings(true)
+  if (!settings) return;
+  setSavingSettings(true);
 
-    try {
-      let heroImageUrl = settings.heroImage
-      let ownerImageUrl = settings.ownerImage
+  try {
+    let heroImageUrl = settings.heroImage;
+    let ownerImageUrl = settings.ownerImage;
 
-      if (heroFile) {
-        const formData = new FormData()
-        formData.append("file", heroFile)
-        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
-        if (uploadRes.ok) {
-          const { url } = await uploadRes.json()
-          heroImageUrl = url
-        }
-      }
-
-      if (ownerFile) {
-        const formData = new FormData()
-        formData.append("file", ownerFile)
-        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData })
-        if (uploadRes.ok) {
-          const { url } = await uploadRes.json()
-          ownerImageUrl = url
-        }
-      }
-
-      const res = await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...settings, heroImage: heroImageUrl, ownerImage: ownerImageUrl }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        setSettings(data.settings)
-        setHeroFile(null)
-        setHeroPreview("")
-        setOwnerFile(null)
-        setOwnerPreview("")
-        alert("Settings saved successfully!")
-      }
-    } catch (error) {
-      console.error("Failed to save settings:", error)
-      alert("Failed to save settings")
-    } finally {
-      setSavingSettings(false)
+    // ---- Upload hero image if selected ----
+    if (heroFile) {
+      // Step 1: Compress image
+       heroImageUrl = await uploadImage(heroFile)
     }
+
+    // ---- Upload owner image if selected ----
+    if (ownerFile) {
+       ownerImageUrl = await uploadImage(ownerFile)
+    }
+
+    // ---- Save settings with uploaded image URLs ----
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...settings,
+        heroImage: heroImageUrl,
+        ownerImage: ownerImageUrl,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setSettings(data.settings);
+
+      // Reset files and previews
+      setHeroFile(null);
+      setHeroPreview("");
+      setOwnerFile(null);
+      setOwnerPreview("");
+
+      alert("Settings saved successfully!");
+    }
+  } catch (error) {
+    console.error("Failed to save settings:", error);
+    alert("Failed to save settings");
+  } finally {
+    setSavingSettings(false);
   }
+};
+
 
   // Client management functions
   const handleAddClient = async (e: React.FormEvent) => {
