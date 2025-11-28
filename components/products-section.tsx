@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Product } from "@/lib/products"
+import Image from "next/image"
 
 export function ProductsSection() {
   const [products, setProducts] = useState<Product[]>([])
@@ -29,6 +30,7 @@ export function ProductsSection() {
   const categories = ["All", ...new Set(products.map((p) => p.category))]
   const filteredProducts =
     selectedCategory === "All" ? products : products.filter((p) => p.category === selectedCategory)
+  const baseURL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
 
   return (
     <section id="products" className="py-16 md:py-24">
@@ -72,8 +74,9 @@ export function ProductsSection() {
                 className="group bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all hover:shadow-lg"
               >
                 <div className="aspect-square bg-muted overflow-hidden">
-                  <img
-                    src={product.imageUrl || "/placeholder.svg"}
+                  <Image
+                    src={(baseURL??'') + (product.imageUrl??'')}
+                    fill
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />

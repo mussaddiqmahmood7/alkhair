@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Quote } from "lucide-react"
 import type { SiteSettings } from "@/lib/site-settings"
+import Image from "next/image"
 
 export function OwnerSection() {
   const [settings, setSettings] = useState<SiteSettings | null>(null)
@@ -13,6 +14,9 @@ export function OwnerSection() {
       .then((data) => setSettings(data.settings))
       .catch(() => {})
   }, [])
+
+    const baseURL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
+
 
   return (
     <section id="owner" className="py-16 md:py-24 bg-secondary">
@@ -31,8 +35,9 @@ export function OwnerSection() {
             <div className="relative">
               <div className="w-72 h-72 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 p-2">
                 <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                  <img
-                    src={settings?.ownerImage || "/owner.png"}
+                  <Image
+                    src={(baseURL??'') + settings?.ownerImage }
+                    fill
                     alt={settings?.ownerName || "Haji Khalid Mehmood"}
                     className="w-full h-full object-cover object-top"
                   />

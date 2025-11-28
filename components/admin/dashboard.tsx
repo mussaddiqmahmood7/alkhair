@@ -31,6 +31,7 @@ import type { Client, BalanceStatus } from "@/lib/clients"
 import type { Category } from "@/lib/categories"
 import { compressImage } from "@/lib/compressImage"
 import { uploadImage } from "@/lib/uploadImage"
+import Image from "next/image"
 
 export function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([])
@@ -424,6 +425,7 @@ export function AdminDashboard() {
   }
 
   const allCategories = categories.map((c) => c.name)
+  const baseURL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
 
   return (
     <div className="min-h-screen bg-muted">
@@ -516,8 +518,9 @@ export function AdminDashboard() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         {previewUrl ? (
-                          <img
+                          <Image
                             src={previewUrl || "/placeholder.svg"}
+                            fill
                             alt="Preview"
                             className="w-full h-40 object-contain rounded-lg"
                           />
@@ -580,8 +583,9 @@ export function AdminDashboard() {
                     {products.map((product) => (
                       <div key={product.id} className="bg-card rounded-xl border border-border overflow-hidden group">
                         <div className="aspect-video bg-muted overflow-hidden">
-                          <img
-                            src={product.imageUrl || "/placeholder.svg"}
+                          <Image
+                            src={(baseURL ?? '') + product.imageUrl}
+                            fill
                             alt={product.name}
                             className="w-full h-full object-cover"
                           />
@@ -1046,8 +1050,9 @@ export function AdminDashboard() {
                         onClick={() => ownerFileRef.current?.click()}
                       >
                         {ownerPreview || settings.ownerImage ? (
-                          <img
-                            src={ownerPreview || settings.ownerImage}
+                          <Image
+                            src={ownerPreview || (baseURL ?? '') + settings.ownerImage}
+                            fill
                             alt="Owner"
                             className="w-32 h-32 object-cover rounded-full mx-auto"
                           />
@@ -1078,8 +1083,9 @@ export function AdminDashboard() {
                         onClick={() => heroFileRef.current?.click()}
                       >
                         {heroPreview || settings.heroImage ? (
-                          <img
-                            src={heroPreview || settings.heroImage}
+                          <Image
+                            src={heroPreview ||  (baseURL ?? '') + settings.heroImage}
+                            fill
                             alt="Hero"
                             className="w-full max-w-md h-48 object-contain mx-auto rounded-lg"
                           />
