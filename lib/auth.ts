@@ -1,4 +1,4 @@
-const ADMIN_EMAIL = "mubashir"
+const ADMIN_EMAIL = "mubashir@gmail.com"
 const ADMIN_PASSWORD = "03009884810"
 
 export function validateCredentials(email: string, password: string): boolean {
